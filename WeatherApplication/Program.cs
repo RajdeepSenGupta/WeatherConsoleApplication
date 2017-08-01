@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Globalization;
 
 namespace WeatherApplication
 {
@@ -16,50 +17,65 @@ namespace WeatherApplication
         public static void Main(string[] args)
         {
             string appId = "0ff0028b695d833b6817c6fdef55146c";
-            string api = "http://api.openweathermap.org/data/2.5/weather?q={0}&APPID={1}";
 
             Weather weather = new Weather();
-            
-            // Take Input
-            Console.Write("Location Name/Coordinate/ZipCode: ");
-            string location = Console.ReadLine();
-            api = String.Format(api, location, appId);
 
-            // Connect to http client
-            HttpClient client = new HttpClient();
-            client.BaseAddress = new Uri(api);
-            client.DefaultRequestHeaders.Accept.Clear();
-            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-            // Get weather details
-            HttpResponseMessage response = client.GetAsync(api).Result;
-            if(response.IsSuccessStatusCode)
+            do
             {
-                var weatherObj = JObject.Parse(response.Content.ReadAsStringAsync().Result);
+                string api = "http://api.openweathermap.org/data/2.5/weather?q={0}&APPID={1}";
+                HttpClient client = new HttpClient();
 
-                // Get Coordinates
-                Coordinates coord = GetCoOrdinates(weatherObj);
-                weather.Latitude = coord.Latitude;
-                weather.Longitude = coord.Longitude;
+                // Take Input
+                Console.Write("Location Name/Coordinate/ZipCode: ");
+                string location = Console.ReadLine();
 
-                // Get Humidity (%)
-                weather.Humidity = GetHumidity(weatherObj); 
+                if (location.ToLower(CultureInfo.InvariantCulture).Equals("clear"))
+                {
+                    Console.Clear();
+                }
+                else if(location.ToLower(CultureInfo.InvariantCulture).Equals("exit"))
+                {
+                    return;
+                }
+                else
+                {
+                    api = String.Format(api, location, appId);
 
-                // Get Location Name
-                weather.Location = weatherObj.SelectToken("name").ToString();
+                    // Connect to http client
+                    client.BaseAddress = new Uri(api);
+                    client.DefaultRequestHeaders.Accept.Clear();
+                    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-                // Get Wind Speed (km/h)
-                weather.Wind = GetWindSpeed(weatherObj);
+                    // Get weather details
+                    HttpResponseMessage response = client.GetAsync(api).Result;
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var weatherObj = JObject.Parse(response.Content.ReadAsStringAsync().Result);
 
-                // Get Temperature (°C)
-                weather.Temperature = GetTemparature(weatherObj);
+                        // Get Coordinates
+                        Coordinates coord = GetCoOrdinates(weatherObj);
+                        weather.Latitude = coord.Latitude;
+                        weather.Longitude = coord.Longitude;
 
-                weather.Status = GetStatus(weatherObj);
-            }
+                        // Get Humidity (%)
+                        weather.Humidity = GetHumidity(weatherObj);
 
-            PrintWeather(weather);
+                        // Get Location Name
+                        weather.Location = weatherObj.SelectToken("name").ToString() + ", "
+                            + weatherObj.SelectToken("sys").SelectToken("country").ToString();
 
-            Console.Read();
+                        // Get Wind Speed (km/h)
+                        weather.Wind = GetWindSpeed(weatherObj);
+
+                        // Get Temperature (°C)
+                        weather.Temperature = GetTemparature(weatherObj);
+
+                        weather.Status = GetStatus(weatherObj);
+                    }
+
+                    PrintWeather(weather);
+                }
+            } while (true);
         }
         
         // Get Coordinates
@@ -118,6 +134,8 @@ namespace WeatherApplication
             Console.WriteLine("Temperature: " + weather.Temperature);
             Console.WriteLine("Humidity: " + weather.Humidity);
             Console.WriteLine("Wind: " + weather.Wind);
+            Console.WriteLine("\nUse the command 'clear' for clearing the console...");
+            Console.WriteLine("Use the command 'exit' for exiting...\n\n");
         }
     }
 }
