@@ -17,7 +17,6 @@ namespace WeatherApplication
         public static void Main(string[] args)
         {
             string appId = "0ff0028b695d833b6817c6fdef55146c";
-
             Weather weather = new Weather();
 
             do
